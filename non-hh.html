@@ -669,7 +669,10 @@ var DEFAULT_CONTENT = {
     },
     nonhh: {
       valueEn: "Complimentary Wi-Fi is available in the public areas using 'hhonors-public'. In-room Wi-Fi is available at a charge of 550 yen per day for standard Wi-Fi usage (3MB). Become a Hilton Honors member today to enjoy instant complimentary in-room Wi-Fi.",
-      valueJp: "客室階 有料（24時間550円）1階～3階 無料「hhonors-public」\n※ヒルトンオーナーズにご登録頂くと無料でご利用できます。下記のリンクよりご登録ください。"
+      valueJp: "客室階 有料（24時間550円）1階～3階 無料「hhonors-public」\n※ヒルトンオーナーズにご登録頂くと無料でご利用できます。下記のリンクよりご登録ください。",
+      linkUrl: "https://www.hilton.com/en/hilton-honors/login/?OCODE=I296W",
+      linkLabelEn: "Join Hilton Honors",
+      linkLabelJp: "ヒルトンオーナーズ（無料）"
     },
     jtb: {
       valueEn: "",
@@ -1190,11 +1193,15 @@ var HotelRender = (function () {
     var pageBlock = w[page] || {};
     var val = j ? pageBlock.valueJp : pageBlock.valueEn;
     if (!val) return "";
+    var linkLabel = j ? pageBlock.linkLabelJp : pageBlock.linkLabelEn;
     return '<section class="section">' +
       '<div class="section-head"><span class="mark" aria-hidden="true">📶</span>' +
       '<h2 class="' + (j ? "jp" : "") + '">' + esc(t.wifi) + '</h2></div>' +
       '<div class="wifi-box">' +
-        '<p class="' + (j ? "jp" : "") + '">' + escML(val) + '</p>' +
+        '<p class="' + (j ? "jp" : "") + '">' + escML(val) +
+        (pageBlock.linkUrl ? '<br>' + '<a class="notice-link" href="' + esc(pageBlock.linkUrl) + '" target="_blank" rel="noopener">' +
+                     esc(linkLabel || pageBlock.linkUrl) + ' <span aria-hidden="true">↗</span></a>' : '') +
+        '</p>' +
       '</div>' +
     '</section>';
   }
