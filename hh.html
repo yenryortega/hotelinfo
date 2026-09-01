@@ -462,6 +462,7 @@ var DEFAULT_CONTENT = {
     hotelNameJP:  "ヒルトンニセコビレッジ",
     month:        "August 2026",
     monthJP:      "8月 2026",
+    monthAuto:    true,
     checkoutTime: "11:00",
     updatedAt:    null
   },
@@ -1061,6 +1062,37 @@ var HotelRender = (function () {
     return (arr || []).filter(function (s) { return !isBlank(s); });
   }
 
+  /* ── MONTH LABEL ─────────────────────────────
+     With meta.monthAuto on (the default), the month and year come
+     from the clock in Japan, so every page rolls over by itself at
+     midnight JST — no redeploy and no admin save needed, and it does
+     not matter what time zone the guest's phone is set to.
+     Turn the flag off in the admin to pin a month by hand. */
+  var MONTH_TZ = "Asia/Tokyo";
+
+  function autoMonth(lang, when) {
+    var d = when || new Date();
+    try {
+      if (isJP(lang)) {
+        var p = {};
+        new Intl.DateTimeFormat("en-US", { timeZone: MONTH_TZ, year: "numeric", month: "numeric" })
+          .formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+        if (!p.year || !p.month) return "";
+        return String(Number(p.month)) + "月 " + p.year;
+      }
+      return new Intl.DateTimeFormat("en-GB", { timeZone: MONTH_TZ, month: "long", year: "numeric" }).format(d);
+    } catch (e) { return ""; }   /* very old browser — fall back to the typed text */
+  }
+
+  function monthLabel(data, lang) {
+    var m = (data && data.meta) || {};
+    if (m.monthAuto !== false) {
+      var auto = autoMonth(lang);
+      if (auto) return auto;
+    }
+    return (isJP(lang) ? m.monthJP : m.month) || "";
+  }
+
   /* ── HERO ────────────────────────────────────── */
   function heroHTML(data, page, lang) {
     var j = isJP(lang);
@@ -1072,7 +1104,7 @@ var HotelRender = (function () {
       (j ? '<div class="hotel-name-jp">' + esc(data.meta.hotelNameJP) + '</div>' : '') +
       '<div class="rule"></div>' +
       (intro ? '<p class="hero-copy' + jpc(lang) + '">' + escML(intro) + '</p>' : '') +
-      '<span class="hero-month">' + esc(j ? data.meta.monthJP : data.meta.month) + '</span>';
+      '<span class="hero-month">' + esc(monthLabel(data, lang)) + '</span>';
   }
 
   /* ── TAX NOTICE ──────────────────────────────── */
@@ -1276,7 +1308,7 @@ var HotelRender = (function () {
       ? new Date(data.meta.updatedAt).toLocaleString(j ? "ja-JP" : "en-GB", { dateStyle: "medium", timeStyle: "short" })
       : "";
     return '<strong>' + esc(j ? data.meta.hotelNameJP : data.meta.hotelName) + '</strong> · ' +
-      esc(j ? data.meta.monthJP : data.meta.month) +
+      esc(monthLabel(data, lang)) +
       (footNote ? ' · ' + esc(footNote) : '') +
       (stamp ? '<span class="stamp">Updated ' + esc(stamp) + '</span>' : '');
   }
@@ -1356,7 +1388,8 @@ var HotelRender = (function () {
     });
   }
 
-  return { mount: mount, buildHTML: buildHTML, esc: esc, escML: escML, filterFor: filterFor };
+  return { mount: mount, buildHTML: buildHTML, esc: esc, escML: escML, filterFor: filterFor,
+           autoMonth: autoMonth, monthLabel: monthLabel };
 })();
 
 HotelRender.mount({ page: "hh" });

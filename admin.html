@@ -128,6 +128,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--i
 .chk input{accent-color:var(--gold);margin:0}
 .chk:has(input:checked){border-color:var(--gold);background:#FAF7F0;color:var(--navy);font-weight:500}
 .chk input:disabled{opacity:.5}
+.month-auto{margin-top:.9rem}
+.month-note{margin:.45rem 0 0;font-size:.72rem;color:var(--gray);line-height:1.55}
+.month-note b{color:var(--navy);font-weight:600}
+.f input:disabled{background:#F7F6F3;color:var(--gray);cursor:not-allowed}
 
 .add-row{width:100%;border:1px dashed var(--line);background:#fff;border-radius:8px;padding:.55rem;
   color:var(--gray);font-size:.8rem;cursor:pointer;font-family:inherit}
@@ -639,6 +643,7 @@ var DEFAULT_CONTENT = {
     hotelNameJP:  "ヒルトンニセコビレッジ",
     month:        "August 2026",
     monthJP:      "8月 2026",
+    monthAuto:    true,
     checkoutTime: "11:00",
     updatedAt:    null
   },
@@ -1241,6 +1246,37 @@ var HotelRender = (function () {
     return (arr || []).filter(function (s) { return !isBlank(s); });
   }
 
+  /* ── MONTH LABEL ─────────────────────────────
+     With meta.monthAuto on (the default), the month and year come
+     from the clock in Japan, so every page rolls over by itself at
+     midnight JST — no redeploy and no admin save needed, and it does
+     not matter what time zone the guest's phone is set to.
+     Turn the flag off in the admin to pin a month by hand. */
+  var MONTH_TZ = "Asia/Tokyo";
+
+  function autoMonth(lang, when) {
+    var d = when || new Date();
+    try {
+      if (isJP(lang)) {
+        var p = {};
+        new Intl.DateTimeFormat("en-US", { timeZone: MONTH_TZ, year: "numeric", month: "numeric" })
+          .formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+        if (!p.year || !p.month) return "";
+        return String(Number(p.month)) + "月 " + p.year;
+      }
+      return new Intl.DateTimeFormat("en-GB", { timeZone: MONTH_TZ, month: "long", year: "numeric" }).format(d);
+    } catch (e) { return ""; }   /* very old browser — fall back to the typed text */
+  }
+
+  function monthLabel(data, lang) {
+    var m = (data && data.meta) || {};
+    if (m.monthAuto !== false) {
+      var auto = autoMonth(lang);
+      if (auto) return auto;
+    }
+    return (isJP(lang) ? m.monthJP : m.month) || "";
+  }
+
   /* ── HERO ────────────────────────────────────── */
   function heroHTML(data, page, lang) {
     var j = isJP(lang);
@@ -1252,7 +1288,7 @@ var HotelRender = (function () {
       (j ? '<div class="hotel-name-jp">' + esc(data.meta.hotelNameJP) + '</div>' : '') +
       '<div class="rule"></div>' +
       (intro ? '<p class="hero-copy' + jpc(lang) + '">' + escML(intro) + '</p>' : '') +
-      '<span class="hero-month">' + esc(j ? data.meta.monthJP : data.meta.month) + '</span>';
+      '<span class="hero-month">' + esc(monthLabel(data, lang)) + '</span>';
   }
 
   /* ── TAX NOTICE ──────────────────────────────── */
@@ -1460,7 +1496,7 @@ var HotelRender = (function () {
       ? new Date(data.meta.updatedAt).toLocaleString(j ? "ja-JP" : "en-GB", { dateStyle: "medium", timeStyle: "short" })
       : "";
     return '<strong>' + esc(j ? data.meta.hotelNameJP : data.meta.hotelName) + '</strong> · ' +
-      esc(j ? data.meta.monthJP : data.meta.month) +
+      esc(monthLabel(data, lang)) +
       (footNote ? ' · ' + esc(footNote) : '') +
       (stamp ? '<span class="stamp">Updated ' + esc(stamp) + '</span>' : '');
   }
@@ -1540,7 +1576,8 @@ var HotelRender = (function () {
     });
   }
 
-  return { mount: mount, buildHTML: buildHTML, esc: esc, escML: escML, filterFor: filterFor };
+  return { mount: mount, buildHTML: buildHTML, esc: esc, escML: escML, filterFor: filterFor,
+           autoMonth: autoMonth, monthLabel: monthLabel };
 })();
 
 window.__bootAdminApp = function () {
@@ -1632,6 +1669,16 @@ window.__bootAdminApp = function () {
       el.dataset.bound = "1";
       var path = el.getAttribute("data-bind");
       var v = get(data, path);
+      if (el.type === "checkbox") {
+        el.checked = !!v;
+        el.addEventListener("change", function () {
+          set(data, path, el.checked);
+          refreshBound();      /* the same flag is on all three tabs */
+          updateMonthFields();
+          touched();
+        });
+        return;
+      }
       el.value = v == null ? "" : v;
       el.addEventListener("input", function () { set(data, path, el.value); touched(); });
     });
@@ -1639,7 +1686,23 @@ window.__bootAdminApp = function () {
   function refreshBound() {
     $$("[data-bind]").forEach(function (el) {
       var v = get(data, el.getAttribute("data-bind"));
+      if (el.type === "checkbox") { el.checked = !!v; return; }
       el.value = v == null ? "" : v;
+    });
+  }
+
+  /* Greys out the two month boxes while the automatic month is on,
+     and shows what the guest pages are printing right now. */
+  function updateMonthFields() {
+    var auto = !(data.meta && data.meta.monthAuto === false);
+    $$("[data-month-field]").forEach(function (el) { el.disabled = auto; });
+    $$("[data-month-note]").forEach(function (el) {
+      el.innerHTML = auto
+        ? "Right now the pages show <b>" + HotelRender.esc(HotelRender.autoMonth("en")) +
+          "</b> / <b>" + HotelRender.esc(HotelRender.autoMonth("jp")) +
+          "</b>, taken from the date in Japan. They change on their own at midnight JST \u2014 " +
+          "nothing to save, nothing to redeploy. The boxes above are only used when this is unticked."
+        : "The pages show exactly what is typed above. Remember to update it each month.";
     });
   }
 
@@ -2008,8 +2071,12 @@ window.__bootAdminApp = function () {
       '<div class="grid' + (jtb ? ' g1' : ' g2') + '">' +
       (jtb ? '' : '<div class="f"><label>Hotel name (EN)</label><input data-bind="meta.hotelName"></div>') +
       '<div class="f"><label>Hotel name (JP)</label><input data-bind="meta.hotelNameJP"></div>' +
-      (jtb ? '' : '<div class="f"><label>Month (EN)</label><input data-bind="meta.month"></div>') +
-      '<div class="f"><label>Month (JP)</label><input data-bind="meta.monthJP"></div></div>');
+      (jtb ? '' : '<div class="f"><label>Month (EN)</label><input data-bind="meta.month" data-month-field></div>') +
+      '<div class="f"><label>Month (JP)</label><input data-bind="meta.monthJP" data-month-field></div></div>' +
+      '<div class="month-auto"><label class="chk">' +
+        '<input type="checkbox" data-bind="meta.monthAuto"> Set the month automatically (Japan time)' +
+      '</label></div>' +
+      '<p class="month-note" data-month-note></p>');
   }
 
   /* ── build one page tab ───────────────────────── */
@@ -2049,6 +2116,7 @@ window.__bootAdminApp = function () {
       '</div>';
 
     bindWithin(panel);
+    updateMonthFields();
     if (isJTB) {
       renderStringList($("#jtbNotes"), data.jtb.loungeNotes, touched);
       $("#addJtbNote").addEventListener("click", function () {
