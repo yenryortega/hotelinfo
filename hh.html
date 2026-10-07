@@ -439,6 +439,34 @@ ul.plain li::before { content: none; }
 /* link inside a table row (room service) */
 .row-link { color: var(--navy); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--gold); }
 .row-link:hover { color: var(--gold); }
+
+/* ── VISUAL POLISH ───────────────────────────────── */
+body { background: radial-gradient(ellipse at top, #fff 0, var(--cream) 58%); }
+.wrap { max-width: 960px; margin: 2rem auto; border: 1px solid rgba(224,218,206,.72); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 70px rgba(22,40,63,.09); }
+.hero { padding-top: 4rem; padding-bottom: 3.1rem; background: linear-gradient(145deg, #14253a, #203b59 72%, #294766); }
+.hero::after { background: radial-gradient(ellipse at 82% 8%, rgba(214,183,103,.2), transparent 34%), radial-gradient(circle at 12% 100%, rgba(255,255,255,.06), transparent 42%); }
+.langbar { box-shadow: 0 5px 18px rgba(22,40,63,.045); }
+.section { padding-top: 2.6rem; padding-bottom: 2.6rem; }
+.section-head { margin-bottom: 1.55rem; }
+.section-head .mark { box-shadow: 0 5px 14px rgba(22,40,63,.14); }
+.tbl-scroll { border: 1px solid var(--line); border-radius: 10px; overflow: auto; }
+table.tbl th { padding-top: .78rem; padding-bottom: .78rem; }
+table.tbl tbody tr { transition: background-color .16s ease; }
+table.tbl tbody tr:hover td { background: #FAF8F2; }
+.card, .linkcard { box-shadow: 0 3px 12px rgba(22,40,63,.035); transition: border-color .16s, box-shadow .16s, transform .16s; }
+.card:hover { border-color: #D5C8A8; box-shadow: 0 8px 22px rgba(22,40,63,.08); transform: translateY(-2px); }
+.linkcard:hover { box-shadow: 0 8px 20px rgba(22,40,63,.08); transform: translateY(-2px); }
+.svc-row, .wifi-box, .checkout { border: 1px solid rgba(224,218,206,.7); }
+.notice { box-shadow: 0 4px 14px rgba(176,141,60,.06); }
+.foot { background: linear-gradient(145deg, #14253a, #203b59); }
+@media (max-width: 600px) {
+  .wrap { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .hero { padding-top: 3rem; }
+  .section { padding-top: 2rem; padding-bottom: 2rem; }
+  .tbl-scroll { border: 0; border-radius: 0; }
+  table.tbl tbody tr { box-shadow: 0 3px 12px rgba(22,40,63,.045); }
+  .card:hover, .linkcard:hover { transform: none; }
+}
 </style>
 </head>
 <body>
