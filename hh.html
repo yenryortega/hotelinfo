@@ -467,6 +467,33 @@ table.tbl tbody tr:hover td { background: #FAF8F2; }
   table.tbl tbody tr { box-shadow: 0 3px 12px rgba(22,40,63,.045); }
   .card:hover, .linkcard:hover { transform: none; }
 }
+
+/* ── GOLD ACCENT LINE ───────────────────────────
+   Thin gold line on top of boxes and the header.
+   Useful Links cards are left without it on purpose. */
+.hero { border-top: 3px solid var(--gold-lt); }
+.card, .svc-row, .wifi-box, .checkout, .tbl-scroll, .foot-note, .callout {
+  border-top: 2px solid var(--gold-lt);
+}
+.card:hover { border-top-color: var(--gold-lt); }
+@media (max-width: 600px) {
+  .tbl-scroll { border-top: 0; }
+  table.tbl tbody tr { border-top: 2px solid var(--gold-lt); }
+}
+
+/* ── DINING TABLE: light header + equal row heights ── */
+table.tbl th {
+  background: var(--navy); color: var(--white);
+  font-weight: 500; letter-spacing: 0.09em;
+}
+@media (min-width: 601px) {
+  table.tbl tbody td { height: 3.5rem; padding-top: .45rem; padding-bottom: .45rem; }
+  table.tbl .sub:empty { display: none; }
+}
+
+/* Link cards fill the row (no empty column on wide screens) */
+.linkgrid { grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
+@media (max-width: 600px) { .linkgrid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
